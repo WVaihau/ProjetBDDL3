@@ -2,7 +2,7 @@
 --
 --   Nom du Cas       : rentcar
 --   Nom de SGBD      : MySQL
---   Date de création : 16/05/2021
+--   Date de création : 17/05/2021
 --   Auteur           : WILLIAMU Vaihau - ABDELLI Nina - SENNECHAEL Maxime | Groupe G - Projet L3 Database
 --
 -- ============================================================
@@ -11,32 +11,26 @@ drop database if exists rentcar;
 create database rentcar;
 use rentcar;
 
-drop table if exists addresse;
+drop table if exists adresse;
 drop table if exists programme_fidelite;
 drop table if exists assurance;
 drop table if exists agence;
 drop table if exists marque;
 drop table if exists categorie;
-drop table if exists vehicule_transport;
 drop table if exists devis;
 drop table if exists type_user;
 drop table if exists utilisateur;
 drop table if exists modele;
-drop table if exists circuit;
 drop table if exists facture;
-drop table if exists employer;
 drop table if exists vehicule_location;
 drop table if exists abonnement;
-drop table if exists vehicule_to_move;
-drop table if exists suivre;
-drop table if exists composition_circuit;
 drop table if exists reservation;
 drop table if exists vehicule_ramener;
 drop table if exists demande_devis;
 
-CREATE TABLE addresse(
+CREATE TABLE adresse(
 
-   id_addresse INT AUTO_INCREMENT,
+   id_adresse INT AUTO_INCREMENT,
 
    rue VARCHAR(50),
 
@@ -44,7 +38,7 @@ CREATE TABLE addresse(
 
    code_postal VARCHAR(50),
 
-   PRIMARY KEY(id_addresse)
+   PRIMARY KEY(id_adresse)
 
 ) ENGINE=`InnoDB`;
 
@@ -58,6 +52,8 @@ CREATE TABLE programme_fidelite(
    prix_prgm_fidelite DECIMAL(2,2),
 
    taux_reduc_prgm_fidelite DECIMAL(2,2),
+
+   duree DATE,
 
    PRIMARY KEY(id_programme_fidelite)
 
@@ -89,11 +85,13 @@ CREATE TABLE agence(
 
    latitude INT,
 
-   id_addresse INT NOT NULL,
+   id_adresse INT NOT NULL,
 
    PRIMARY KEY(code_agence),
 
-   FOREIGN KEY(id_addresse) REFERENCES addresse(id_addresse)
+   UNIQUE(id_adresse),
+
+   FOREIGN KEY(id_adresse) REFERENCES adresse(id_adresse)
 
 ) ENGINE=`InnoDB`;
 
@@ -124,17 +122,6 @@ CREATE TABLE categorie(
 ) ENGINE=`InnoDB`;
 
 
-CREATE TABLE vehicule_transport(
-
-   matricule_vehicule_transport VARCHAR(50),
-
-   capacity_vehicule_transport INT,
-
-   PRIMARY KEY(matricule_vehicule_transport)
-
-) ENGINE=`InnoDB`;
-
-
 CREATE TABLE devis(
 
    id_devis INT AUTO_INCREMENT,
@@ -142,6 +129,8 @@ CREATE TABLE devis(
    tarif_location DECIMAL(4,2),
 
    date_debut DATE,
+
+   duree DATE,
 
    id_assurance INT,
 
@@ -177,17 +166,19 @@ CREATE TABLE utilisateur(
 
    prenom_user VARCHAR(50),
 
-   code_type_user VARCHAR(3) NOT NULL,
+   date_abo DATE,
 
-   id_addresse INT NOT NULL,
+   id_adresse INT NOT NULL,
+
+   code_type_user VARCHAR(3) NOT NULL,
 
    PRIMARY KEY(id_user),
 
-   UNIQUE(code_type_user),
+   UNIQUE(id_adresse),
 
-   FOREIGN KEY(code_type_user) REFERENCES type_user(code_type_user),
+   FOREIGN KEY(id_adresse) REFERENCES adresse(id_adresse),
 
-   FOREIGN KEY(id_addresse) REFERENCES addresse(id_addresse)
+   FOREIGN KEY(code_type_user) REFERENCES type_user(code_type_user)
 
 ) ENGINE=`InnoDB`;
 
@@ -213,21 +204,6 @@ CREATE TABLE modele(
 ) ENGINE=`InnoDB`;
 
 
-CREATE TABLE circuit(
-
-   id_circuit INT AUTO_INCREMENT,
-
-   matricule_vehicule_transport VARCHAR(50) NOT NULL,
-
-   PRIMARY KEY(id_circuit),
-
-   UNIQUE(matricule_vehicule_transport),
-
-   FOREIGN KEY(matricule_vehicule_transport) REFERENCES vehicule_transport(matricule_vehicule_transport)
-
-) ENGINE=`InnoDB`;
-
-
 CREATE TABLE facture(
 
    id_facture INT AUTO_INCREMENT,
@@ -243,21 +219,6 @@ CREATE TABLE facture(
    UNIQUE(id_devis),
 
    FOREIGN KEY(id_devis) REFERENCES devis(id_devis)
-
-) ENGINE=`InnoDB`;
-
-
-CREATE TABLE employer(
-
-   id_employer INT AUTO_INCREMENT,
-
-   login_employer VARCHAR(50),
-
-   id_user INT NOT NULL,
-
-   PRIMARY KEY(id_employer),
-
-   FOREIGN KEY(id_user) REFERENCES utilisateur(id_user)
 
 ) ENGINE=`InnoDB`;
 
@@ -291,62 +252,13 @@ CREATE TABLE abonnement(
 
    id_user INT,
 
-   id_programme_fidelite VARCHAR(4),
+   id_programme_fidelite VARCHAR(4) NOT NULL,
 
-   date_debut DATE,
-
-   date_fin DATE,
-
-   PRIMARY KEY(id_user, id_programme_fidelite),
+   PRIMARY KEY(id_user),
 
    FOREIGN KEY(id_user) REFERENCES utilisateur(id_user),
 
    FOREIGN KEY(id_programme_fidelite) REFERENCES programme_fidelite(id_programme_fidelite)
-
-) ENGINE=`InnoDB`;
-
-
-CREATE TABLE vehicule_to_move(
-
-   matricule_location VARCHAR(50),
-
-   id_circuit INT,
-
-   PRIMARY KEY(matricule_location, id_circuit),
-
-   FOREIGN KEY(matricule_location) REFERENCES vehicule_location(matricule_location),
-
-   FOREIGN KEY(id_circuit) REFERENCES circuit(id_circuit)
-
-) ENGINE=`InnoDB`;
-
-
-CREATE TABLE suivre(
-
-   id_circuit INT,
-
-   id_employer INT,
-
-   PRIMARY KEY(id_circuit, id_employer),
-
-   FOREIGN KEY(id_circuit) REFERENCES circuit(id_circuit),
-
-   FOREIGN KEY(id_employer) REFERENCES employer(id_employer)
-
-) ENGINE=`InnoDB`;
-
-
-CREATE TABLE composition_circuit(
-
-   code_agence VARCHAR(4),
-
-   id_circuit INT,
-
-   PRIMARY KEY(code_agence, id_circuit),
-
-   FOREIGN KEY(code_agence) REFERENCES agence(code_agence),
-
-   FOREIGN KEY(id_circuit) REFERENCES circuit(id_circuit)
 
 ) ENGINE=`InnoDB`;
 
@@ -357,19 +269,15 @@ CREATE TABLE reservation(
 
    matricule_location VARCHAR(50),
 
-   id_employer INT,
-
    date_debut DATE,
 
    duree DATE,
 
-   PRIMARY KEY(id_user, matricule_location, id_employer),
+   PRIMARY KEY(id_user, matricule_location),
 
    FOREIGN KEY(id_user) REFERENCES utilisateur(id_user),
 
-   FOREIGN KEY(matricule_location) REFERENCES vehicule_location(matricule_location),
-
-   FOREIGN KEY(id_employer) REFERENCES employer(id_employer)
+   FOREIGN KEY(matricule_location) REFERENCES vehicule_location(matricule_location)
 
 ) ENGINE=`InnoDB`;
 
@@ -388,9 +296,9 @@ CREATE TABLE vehicule_ramener(
 
    code_agence VARCHAR(4) NOT NULL,
 
-   id_user INT NOT NULL,
+   id_user_agent INT NOT NULL,
 
-   id_employer INT NOT NULL,
+   id_user_client INT NOT NULL,
 
    id_facture INT NOT NULL,
 
@@ -402,9 +310,9 @@ CREATE TABLE vehicule_ramener(
 
    FOREIGN KEY(code_agence) REFERENCES agence(code_agence),
 
-   FOREIGN KEY(id_user) REFERENCES utilisateur(id_user),
+   FOREIGN KEY(id_user_agent) REFERENCES utilisateur(id_user),
 
-   FOREIGN KEY(id_employer) REFERENCES employer(id_employer),
+   FOREIGN KEY(id_user_client) REFERENCES utilisateur(id_user),
 
    FOREIGN KEY(id_facture) REFERENCES facture(id_facture)
 
@@ -419,17 +327,13 @@ CREATE TABLE demande_devis(
 
    id_devis INT,
 
-   id_employer INT,
-
-   PRIMARY KEY(id_user, matricule_location, id_devis, id_employer),
+   PRIMARY KEY(id_user, matricule_location, id_devis),
 
    FOREIGN KEY(id_user) REFERENCES utilisateur(id_user),
 
    FOREIGN KEY(matricule_location) REFERENCES vehicule_location(matricule_location),
 
-   FOREIGN KEY(id_devis) REFERENCES devis(id_devis),
-
-   FOREIGN KEY(id_employer) REFERENCES employer(id_employer)
+   FOREIGN KEY(id_devis) REFERENCES devis(id_devis)
 
 ) ENGINE=`InnoDB`;
 COMMIT;
